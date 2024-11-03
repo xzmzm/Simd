@@ -34,5 +34,5 @@ jobs:
       - name: Upload Simd.dll
         uses: actions/upload-artifact@v3
         with:
-          name: Simd-x64-Release
+          name: Simd-x64-Release-dll
           path: bin/v143/x64/Release/Simd.dll
