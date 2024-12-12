@@ -5537,14 +5537,14 @@ SIMD_API void SimdSynetMergedConvolution32fForward(void * context, const float *
 #endif
 }
 
-SIMD_API void* SimdSynetMergedConvolution16bInit(size_t batch, const SimdConvolutionParameters* convs, size_t count, SimdSynetCompatibilityType compatibility)
+SIMD_API void* SimdSynetMergedConvolution16bInit(size_t batch, const SimdConvolutionParameters* convs, size_t count, SimdBool add)
 {
     SIMD_EMPTY();
 #if defined(SIMD_SYNET_ENABLE)
-    typedef void* (*SimdSynetMergedConvolution16bInitPtr) (size_t batch, const SimdConvolutionParameters* convs, size_t count, SimdSynetCompatibilityType compatibility);
+    typedef void* (*SimdSynetMergedConvolution16bInitPtr) (size_t batch, const SimdConvolutionParameters* convs, size_t count, SimdBool add);
     const static SimdSynetMergedConvolution16bInitPtr simdSynetMergedConvolution16bInit = SIMD_FUNC4(SynetMergedConvolution16bInit, SIMD_AMXBF16_FUNC, SIMD_AVX512BW_FUNC, SIMD_AVX2_FUNC, SIMD_SSE41_FUNC);
 
-    return simdSynetMergedConvolution16bInit(batch, convs, count, compatibility);
+    return simdSynetMergedConvolution16bInit(batch, convs, count, add);
 #else
     assert(0);
     return 0;
@@ -5584,11 +5584,11 @@ SIMD_API const char* SimdSynetMergedConvolution16bInfo(const void* context)
 #endif
 }
 
-SIMD_API void SimdSynetMergedConvolution16bSetParams(void* context, const float* const* weight, SimdBool* internal, const float* const* bias, const float* const* params)
+SIMD_API void SimdSynetMergedConvolution16bSetParams(void* context, const float* const* weight, const float* const* bias, const float* const* params)
 {
     SIMD_EMPTY();
 #if defined(SIMD_SYNET_ENABLE)
-    ((SynetMergedConvolution16b*)context)->SetParams(weight, internal, bias, params);
+    ((SynetMergedConvolution16b*)context)->SetParams(weight, bias, params);
 #else
     assert(0);
 #endif
@@ -6952,16 +6952,16 @@ SIMD_API void SimdYuv444pToRgbaV2(const uint8_t* y, size_t yStride, const uint8_
 //        Avx512bw::Yuv444pToRgbaV2(y, yStride, u, uStride, v, vStride, width, height, rgba, rgbaStride, alpha, yuvType);
 //    else
 //#endif
-//#ifdef SIMD_AVX2_ENABLE
-//    if (Avx2::Enable && width >= Avx2::A)
-//        Avx2::Yuv444pToRgbaV2(y, yStride, u, uStride, v, vStride, width, height, rgba, rgbaStride, alpha, yuvType);
-//    else
-//#endif
-//#ifdef SIMD_SSE41_ENABLE
-//    if (Sse41::Enable && width >= Sse41::A)
-//        Sse41::Yuv444pToRgbaV2(y, yStride, u, uStride, v, vStride, width, height, rgba, rgbaStride, alpha, yuvType);
-//    else
-//#endif
+#ifdef SIMD_AVX2_ENABLE
+    if (Avx2::Enable && width >= Avx2::A)
+        Avx2::Yuv444pToRgbaV2(y, yStride, u, uStride, v, vStride, width, height, rgba, rgbaStride, alpha, yuvType);
+    else
+#endif
+#ifdef SIMD_SSE41_ENABLE
+    if (Sse41::Enable && width >= Sse41::A)
+        Sse41::Yuv444pToRgbaV2(y, yStride, u, uStride, v, vStride, width, height, rgba, rgbaStride, alpha, yuvType);
+    else
+#endif
 //#ifdef SIMD_NEON_ENABLE
 //    if (Neon::Enable && width >= Neon::A)
 //        Neon::Yuv444pToRgbaV2(y, yStride, u, uStride, v, vStride, width, height, rgba, rgbaStride, alpha, yuvType);

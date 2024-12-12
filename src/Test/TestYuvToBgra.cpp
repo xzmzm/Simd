@@ -341,16 +341,16 @@ namespace Test
         if (TestBase())
             result = result && YuvToBgra2AutoTest(FUNC_YUV2(Simd::Base::Yuv444pToRgbaV2), FUNC_YUV2(SimdYuv444pToRgbaV2), 1, 1);
 
-//#ifdef SIMD_SSE41_ENABLE
-//        if (Simd::Sse41::Enable && TestSse41())
-//            result = result && YuvToBgra2AutoTest(FUNC_YUV2(Simd::Sse41::Yuv444pToRgbaV2), FUNC_YUV2(SimdYuv444pToRgbaV2), 1, 1);
-//#endif 
-//
-//#ifdef SIMD_AVX2_ENABLE
-//        if (Simd::Avx2::Enable && TestAvx2())
-//            result = result && YuvToBgra2AutoTest(FUNC_YUV2(Simd::Avx2::Yuv444pToRgbaV2), FUNC_YUV2(SimdYuv444pToRgbaV2), 1, 1);
-//#endif 
-//
+#ifdef SIMD_SSE41_ENABLE
+        if (Simd::Sse41::Enable && TestSse41())
+            result = result && YuvToBgra2AutoTest(FUNC_YUV2(Simd::Sse41::Yuv444pToRgbaV2), FUNC_YUV2(SimdYuv444pToRgbaV2), 1, 1);
+#endif 
+
+#ifdef SIMD_AVX2_ENABLE
+        if (Simd::Avx2::Enable && TestAvx2())
+            result = result && YuvToBgra2AutoTest(FUNC_YUV2(Simd::Avx2::Yuv444pToRgbaV2), FUNC_YUV2(SimdYuv444pToRgbaV2), 1, 1);
+#endif 
+
 //#ifdef SIMD_AVX512BW_ENABLE
 //        if (Simd::Avx512bw::Enable && TestAvx512bw())
 //            result = result && YuvToBgra2AutoTest(FUNC_YUV2(Simd::Avx512bw::Yuv444pToRgbaV2), FUNC_YUV2(SimdYuv444pToRgbaV2), 1, 1);

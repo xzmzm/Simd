@@ -34,6 +34,10 @@ namespace Simd
         const int JpegMaxDimensions = 1 << 24;
 
         const int JpegMarkerNone = 0xFF;
+        const int JpegMarkerSoi = 0xD8;
+        const int JpegMarkerEoi = 0xD9;
+        const int JpegMarkerSos = 0xDA;
+        const int JpegMarkerDnl = 0xDC;
 
         extern const uint8_t JpegDeZigZag[80];
 
@@ -72,6 +76,7 @@ namespace Simd
 
         //-------------------------------------------------------------------------------------------------
 
+        typedef void (*IdctBlockPtr)(const int16_t * src, uint8_t* dst, int stride);
         typedef uint8_t* (*ResampleRowPtr)(uint8_t* out, const uint8_t* in0, const uint8_t* in1, int w, int hs);
         typedef void (*YuvToRgbRowPtr)(uint8_t* out, const uint8_t* y, const uint8_t* pcb, const uint8_t* pcr, int count, int step);
         typedef void (*YuvToBgrPtr)(const uint8_t* y, size_t yStride, const uint8_t* u, size_t uStride, const uint8_t* v, size_t vStride, size_t width, size_t height, uint8_t* bgr, size_t bgrStride, SimdYuvType yuvType);
@@ -82,12 +87,6 @@ namespace Simd
 
         struct JpegContext
         {
-            JpegContext(InputMemoryStream* s)
-                : stream(s)
-                , img_n(0)
-            {
-            }
-
             InputMemoryStream* stream;
             uint32_t img_x, img_y;
             int img_n, img_out_n;
@@ -121,15 +120,42 @@ namespace Simd
 
             Array8u out;
 
-            void (*idct_block_kernel)(uint8_t* out, int out_stride, short data[64]);
-
+            IdctBlockPtr idctBlock;
             ResampleRowPtr resampleRowHv2;
             YuvToRgbRowPtr yuvToRgbRow;
 
             YuvToBgrPtr yuv444pToBgr, yuv420pToBgr;
             YuvToBgraPtr yuv444pToBgra, yuv420pToBgra;
             AnyToAnyPtr rgbaToAny;
+
+            JpegContext(InputMemoryStream* s);
+            void Reset();
+
+            SIMD_INLINE bool NeedRestart() const
+            {
+                return marker >= 0xd0 && marker <= 0xd7;
+            }
         };
+
+        //-------------------------------------------------------------------------------------------------
+
+        SIMD_INLINE int JpegIdctConst(float value)
+        {
+            return int(value * 4096.0f + 0.5f);
+        }
+
+        const int JpegIdctK00 = JpegIdctConst(0.5411961f);
+        const int JpegIdctK01 = JpegIdctConst(-1.847759065f);
+        const int JpegIdctK02 = JpegIdctConst(0.765366865f);
+        const int JpegIdctK03 = JpegIdctConst(1.175875602f);
+        const int JpegIdctK04 = JpegIdctConst(0.298631336f);
+        const int JpegIdctK05 = JpegIdctConst(2.053119869f);
+        const int JpegIdctK06 = JpegIdctConst(3.072711026f);
+        const int JpegIdctK07 = JpegIdctConst(1.501321110f);
+        const int JpegIdctK08 = JpegIdctConst(-0.899976223f);
+        const int JpegIdctK09 = JpegIdctConst(-2.562915447f);
+        const int JpegIdctK10 = JpegIdctConst(-1.961570560f);
+        const int JpegIdctK11 = JpegIdctConst(-0.390180644f);
 
         //-------------------------------------------------------------------------------------------------
 

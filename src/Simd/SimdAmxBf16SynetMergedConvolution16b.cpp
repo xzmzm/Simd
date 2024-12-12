@@ -43,15 +43,10 @@ namespace Simd
         {
             const float* src = (float*)src8;
             size_t srcC = AlignHi(p.srcC, a.miK);
-            size_t bufH = a.bufH[0], mask = bufH - 1;
             if (srcC == p.srcC)
             {
                 size_t size = p.srcW * p.srcC;
-                size_t yInt = Simd::Max(yBeg, AlignLo(yEnd, bufH));
-                if (yInt > yBeg)
-                    Float32ToBFloat16(src + yBeg * size, (yInt - yBeg) * size, dst + (yBeg & mask) * size);
-                if (yEnd > yInt)
-                    Float32ToBFloat16(src + yInt * size, (yEnd - yInt) * size, dst + (yInt & mask) * size);
+                Float32ToBFloat16(src + yBeg * size, (yEnd - yBeg) * size, dst);
             }
             else
             {
@@ -67,7 +62,7 @@ namespace Simd
                 for (size_t y = yBeg; y < yEnd; ++y)
                 {
                     const float* ps = src + y * p.srcW * p.srcC;
-                    uint16_t* pd = dst + (y & mask) * p.srcW * srcC;
+                    uint16_t* pd = dst + (y - yBeg) * p.srcW * srcC;
                     for (size_t x = 0; x < p.srcW; ++x)
                     {
                         size_t c = 0;
@@ -87,14 +82,13 @@ namespace Simd
         static void ReorderBf16(const uint8_t* src8, const ConvParam& p, const AlgParam& a, size_t yBeg, size_t yEnd, uint16_t* dst)
         {
             const uint16_t* src = (uint16_t*)src8;
-            size_t bufH = a.bufH[0], mask = bufH - 1;
             size_t srcC = AlignHi(p.srcC, a.miK);
             size_t srcCDF = Simd::AlignLo(p.srcC, DF);
             __mmask32 tailC = TailMask32(p.srcC - srcCDF);
             for (size_t y = yBeg; y < yEnd; ++y)
             {
                 const uint16_t* ps = src + y * p.srcW * p.srcC;
-                uint16_t* pd = dst + (y & mask) * p.srcW * srcC;
+                uint16_t* pd = dst + (y - yBeg) * p.srcW * srcC;
                 for (size_t x = 0; x < p.srcW; ++x)
                 {
                     size_t c = 0;
@@ -117,11 +111,11 @@ namespace Simd
             {
                 SetSize(Avx512bw::F, Avx512bw::DF);
                 if (!_src16b)
-                    _convert = ConvertFp32ToBf16;
+                    _toBf16 = ConvertFp32ToBf16;
                 else if (!Aligned(p.conv[0].srcC, Avx512bw::DF))
-                    _convert = ReorderBf16;
+                    _toBf16 = ReorderBf16;
                 else
-                    _convert = NULL;
+                    _toBf16 = NULL;
                 if (_param.conv[0].Is1x1())
                     SetInput(_param.conv[0], _input);
                 else
@@ -140,11 +134,11 @@ namespace Simd
             {
                 SetSize(Avx512bw::F, Avx512bw::DF);
                 if (!_src16b)
-                    _convert = ConvertFp32ToBf16;
+                    _toBf16 = ConvertFp32ToBf16;
                 else if (!Aligned(p.conv[0].srcC, Avx512bw::DF))
-                    _convert = ReorderBf16;
+                    _toBf16 = ReorderBf16;
                 else
-                    _convert = NULL;
+                    _toBf16 = NULL;
                 if (_param.conv[0].Is1x1())
                     SetInput(_param.conv[0], _input);
                 else
@@ -168,9 +162,9 @@ namespace Simd
 
         //-------------------------------------------------------------------------------------------------
 
-        void* SynetMergedConvolution16bInit(size_t batch, const SimdConvolutionParameters* convs, size_t count, SimdSynetCompatibilityType compatibility)
+        void* SynetMergedConvolution16bInit(size_t batch, const SimdConvolutionParameters* convs, size_t count, SimdBool add)
         {
-            MergConvParam param(batch, convs, count, SimdFalse, compatibility);
+            MergConvParam param(batch, convs, count, add);
             if (!param.Valid(SimdTensorData32f, SimdTensorData16b))
                 return NULL;
             if (Base::SynetMergedConvolution16bCdc::Preferable(param))
@@ -179,7 +173,8 @@ namespace Simd
                 return new SynetMergedConvolution16bCd(param);
             else if (Base::SynetMergedConvolution16bDc::Preferable(param))
                 return new SynetMergedConvolution16bDc(param);
-            return Base::SynetMergedConvolution16bInit(batch, convs, count, compatibility);
+            else
+                return new Base::SynetMergedConvolution16b(param);
         }
 	}
 #endif
